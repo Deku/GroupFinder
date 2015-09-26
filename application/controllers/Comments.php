@@ -15,7 +15,7 @@ class Comments extends GF_Global_controller {
             $this->load->model('comment_model');
             $this->load->library('parser');
             
-            $comments = $this->comment_model->getComments($id, $type);
+            $comments = $this->comment_model->get_list($id, $type);
             $response = array();
             foreach ($comments as $comment)
             {
@@ -68,12 +68,12 @@ class Comments extends GF_Global_controller {
             
             $this->load->model('comment_model');
             
-            $result = $this->comment_model->postComment($user_id, $ref, $origin, $message);
+            $result = $this->comment_model->insert($user_id, $ref, $origin, $message);
             
             if ($result)
             {
                 $this->load->library('parser');
-                $last_comment = $this->comment_model->getLatestComment($ref, $origin);
+                $last_comment = $this->comment_model->get_last($ref, $origin);
                 $last_comment[0]['img_src'] = $this->format_img_src($last_comment[0]['img_src']);
                 $html = $html = $this->parser->parse('global/comment', $last_comment[0], true);
                 echo json_encode($html);

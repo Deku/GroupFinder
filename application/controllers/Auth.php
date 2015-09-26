@@ -11,7 +11,7 @@ class Auth extends GF_Global_controller {
     
     public function __construct() {
         parent::__construct();
-        $this->load->model('account_model');
+        $this->load->model('user_model');
     }
     
     /*
@@ -117,9 +117,9 @@ class Auth extends GF_Global_controller {
             'keywords' => $this->normalizeChars(strtolower($name . ' ' . $title . ' ' . $countryName))
         );
         
-        if ($this->account_model->create($account))
+        if ($this->user_model->create($account))
         {
-            $user_id = $this->account_model->get_id($account['username']);
+            $user_id = $this->user_model->get_id($account['username']);
             
             $img_small = 'http://www.gravatar.com/avatar/' . md5(strtolower(trim($account['email']))) . '?d=mm&s=40';
             $img_medium = 'http://www.gravatar.com/avatar/' . md5(strtolower(trim($account['email']))) . '?d=mm&s=85';
@@ -144,7 +144,7 @@ class Auth extends GF_Global_controller {
             );
             
             $this->load->model('picture_model');
-            $result = $this->picture_model->saveProfileImageRef($refs);
+            $result = $this->picture_model->save_user_picture($refs);
             
             $_SESSION['user_id'] = $user_id;
             $_SESSION['username'] = $account['username'];
@@ -194,13 +194,13 @@ class Auth extends GF_Global_controller {
         $user = $this->input->post('username');
         $pass = $this->input->post('password');
         
-        if ($this->account_model->exists($user) && ($this->auth($user, $pass) == TRUE))
+        if ($this->user_model->exists($user) && ($this->auth($user, $pass) == TRUE))
         {
-            $user_id = $this->account_model->get_id($user);
+            $user_id = $this->user_model->get_id($user);
             
-            if ($this->account_model->is_locked($user))
+            if ($this->user_model->is_locked($user))
             {   
-                if (!$this->account_model->has_activation_code($user_id))
+                if (!$this->user_model->has_activation_code($user_id))
                 {
                     $_SESSION['username'] = $user;
                     $_SESSION['user_id'] = $user_id;
@@ -225,7 +225,7 @@ class Auth extends GF_Global_controller {
                     $keepLogged_id = random_string('alnum', 64);
                     $keepLogged_token = random_string('alnum', 10);
                     
-                    $this->account_model->update_persistent_session(
+                    $this->user_model->update_persistent_session(
                                 $user_id,
                                 $keepLogged_id,
                                 sha1($keepLogged_token)
@@ -249,20 +249,20 @@ class Auth extends GF_Global_controller {
     }
     
     public function activate() {
-        $user_id = $this->account_model->get_id($this->session->username);
-        $_SESSION['user_email'] = $this->account_model->get_email($user_id);
+        $user_id = $this->user_model->get_id($this->session->username);
+        $_SESSION['user_email'] = $this->user_model->get_email($user_id);
         
-        if ($this->account_model->has_activation_code($user_id))
+        if ($this->user_model->has_activation_code($user_id))
         {
             $_SESSION['emailSent'] = true;
-            $_SESSION['pending'] = $this->account_model->userActivationPending($user_id);
+            $_SESSION['pending'] = $this->user_model->userActivationPending($user_id);
         } 
         else
         {
             // Creamos el codigo de activacion
             $this->load->helper('string');
             $code = random_string('alnum', 10);
-            $this->account_model->create_activation_code($user_id, $code);
+            $this->user_model->create_activation_code($user_id, $code);
             
             // Lo enviamos por correo
             $this->load->library('email');
@@ -304,11 +304,11 @@ class Auth extends GF_Global_controller {
         
         $user_id = $this->session->user_id;
         $code = $this->input->post('activationCode');
-        $storedCode = $this->account_model->get_activation_code($user_id);
+        $storedCode = $this->user_model->get_activation_code($user_id);
         
         if ($storedCode && $code == $storedCode)
         {
-            if ($this->account_model->activate($user_id))
+            if ($this->user_model->activate($user_id))
             {
                 $this->registerSuccess();
             } else {
@@ -330,7 +330,7 @@ class Auth extends GF_Global_controller {
         $user_id = $this->session->user_id;
         $vars = array(
             'lfg.username' => $this->session->username,
-            'lfg.code' => $this->account_model->get_activation_code($user_id)
+            'lfg.code' => $this->user_model->get_activation_code($user_id)
         );
         
         $this->send_email('REGISTER_ACTIVATION_PROMPT', $user_email, $vars);
@@ -339,16 +339,16 @@ class Auth extends GF_Global_controller {
     }
     
     public function logout() {
-        $this->account_model->remove_persistent_session($this->session->user_id);
+        $this->user_model->remove_persistent_session($this->session->user_id);
         session_destroy();
         redirect('portal/home');
     }
     
     private function auth($user, $pass) {
-        $salt = $this->account_model->get_salt($user);
+        $salt = $this->user_model->get_salt($user);
         $hashed_pass = sha1(sha1($pass) . sha1($salt));
         
-        return $this->account_model->check_password($user, $hashed_pass);
+        return $this->user_model->check_password($user, $hashed_pass);
     }
     
     public function changePassword() {
@@ -388,7 +388,7 @@ class Auth extends GF_Global_controller {
                 $salt = random_string('alnum', 8); // String alfanumerico aleatorio
                 $password = sha1(sha1($password) . sha1($salt));
                 
-                $result = $this->account_model->change_password($this->session->user_id, $password, $salt);
+                $result = $this->user_model->change_password($this->session->user_id, $password, $salt);
                 
                 $this->return_ajax_success();
             } else {

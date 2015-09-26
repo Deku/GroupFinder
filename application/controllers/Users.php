@@ -14,7 +14,7 @@ class Users extends GF_Global_controller {
         if (isset($user_id) && $user_id > 0)
         {
             // Obtenemos el perfil del usuario
-            $profile = $this->user_model->getProfile($user_id);
+            $profile = $this->user_model->get_profile($user_id);
             $this->data['error'] = false;
             
             if (isset($profile))
@@ -49,7 +49,7 @@ class Users extends GF_Global_controller {
         
         $this->load->model('project_model');
         // Bancos
-        $banks = $this->project_model->getBanks();
+        $banks = $this->bank_model->get_list();
         $bank_array = array();
 
         foreach ($banks as $b) {
@@ -65,7 +65,7 @@ class Users extends GF_Global_controller {
         );
         $this->data['bank_acc_types'] = $bank_acc_types;
         
-        $user_bank = $this->user_model->getUserBank($this->session->user_id);
+        $user_bank = $this->user_model->get_bank_data($this->session->user_id);
 
         $this->data['user_bank'] = $user_bank;
         $this->data['countries'] = $countries;
@@ -148,7 +148,7 @@ class Users extends GF_Global_controller {
             
             $this->load->model('user_model');
             
-            $result = $this->user_model->updateProfile($this->session->user_id, $updates);
+            $result = $this->user_model->update($this->session->user_id, $updates);
             
             if ($result)
             {
@@ -163,7 +163,7 @@ class Users extends GF_Global_controller {
         $this->requires_login();
         
         $this->load->library('parser');
-        $friends = $this->user_model->getFriendsList($this->session->user_id);
+        $friends = $this->friend_model->get_list($this->session->user_id);
         $html_friends = array();
        
         foreach($friends as $f) {
@@ -173,7 +173,7 @@ class Users extends GF_Global_controller {
             array_push($html_friends, $this->parser->parse('users/fragments/users_friend', $f, true));
         }
         
-        $requests = $this->user_model->getPendingRequests($this->session->user_id);
+        $requests = $this->friend_model->get_pending($this->session->user_id);
         $html_requests = array();
 
         foreach($requests as $r) {
@@ -195,7 +195,7 @@ class Users extends GF_Global_controller {
         $this->requires_login();
         
         $this->load->library('parser');
-        $requests = $this->user_model->getPendingRequests($this->session->user_id);
+        $requests = $this->friend_model->get_pending($this->session->user_id);
         $html_requests = array();
 
         foreach($requests as $r) {
@@ -216,9 +216,10 @@ class Users extends GF_Global_controller {
         {
             if (isset($target_id) && $target_id > 0)
             {
+                $this->load->model('friend_model');
                 $sender_id = $this->session->user_id;
                 
-                if ($this->user_model->addFriendsRequest($sender_id, $target_id))
+                if ($this->friend_model->add($sender_id, $target_id))
                 {
                     $this->return_ajax_success("Solicitud enviada");
                 } else {
@@ -237,7 +238,7 @@ class Users extends GF_Global_controller {
             switch($action)
             {
                 case 'accept':
-                    if ($this->user_model->acceptFriendRequest($request_id))
+                    if ($this->friend_model->accept($request_id))
                     {
                         $this->return_ajax_success();
                     } else {
@@ -245,7 +246,7 @@ class Users extends GF_Global_controller {
                     }
                     break;
                 case 'reject':
-                    if ($this->user_model->rejectFriendRequest($request_id))
+                    if ($this->friend_model->reject($request_id))
                     {
                         $this->return_ajax_success();
                     } else {
@@ -265,7 +266,7 @@ class Users extends GF_Global_controller {
             
             if (isset($request_id) && $request_id > 0)
             {   
-                if ($this->user_model->removeFriend($request_id))
+                if ($this->friend_model->remove($request_id))
                 {
                     $this->return_ajax_success();
                 } else {

@@ -14,7 +14,7 @@ class Search extends GF_Global_controller {
         $this->load->model('user_model');
         
         $query = $this->input->get('q');
-        $result = $this->user_model->search($query);
+        $result = $this->user_model->like($query);
         
         header('Content-Type: application/json');
         echo json_encode($result);

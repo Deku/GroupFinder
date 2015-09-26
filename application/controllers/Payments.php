@@ -8,13 +8,14 @@ class Payments extends GF_Global_controller {
     
     public function checkout() {
         $this->requires_login();
+        $this->load->model('project_model');
+        $this->load->model('reward_model');
         
         $rid = $this->input->post('reward-id');
-        $this->load->model('project_model');
-        $reward = $this->project_model->getReward($rid);
+        $reward = $this->reward_model->get($rid);
         
         $pid = $this->input->post('project-id');
-        $project_title = $this->project_model->getProjectTitle($pid);
+        $project_title = $this->project_model->get_title($pid);
         
         $pledge_amount = $this->input->post('pledge-amount');
         $backer_name = $this->input->post('backer-name');

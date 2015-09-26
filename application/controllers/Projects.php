@@ -41,7 +41,7 @@ class Projects extends GF_Global_controller {
                     $this->return_ajax_error('Modo seleccionado no es valido');
                 }
                 
-                if ($this->project_model->updateFundingMode($pid, $mode)) {
+                if ($this->project_model->update($pid, array('funding_mode' => $mode))) {
                     $this->return_ajax_success();
                 } else {
                     $this->return_ajax_error();
@@ -57,7 +57,7 @@ class Projects extends GF_Global_controller {
                     'bank_acc_number' => $this->input->post('bank-acc-number')
                 );
                 
-                if ($this->project_model->updateBankData($pid, $data)) {
+                if ($this->project_model->update($pid, $data)) {
                     $this->return_ajax_success();
                 } else {
                     $this->return_ajax_error();
@@ -70,7 +70,7 @@ class Projects extends GF_Global_controller {
                     $this->return_ajax_error('Seleccion invalida');
                 }
                 
-                if ($this->project_model->updateRewardsActivated($pid, $activate)) {
+                if ($this->project_model->update($pid, array('rewards_activated' => $activate))) {
                     $this->return_ajax_success();
                 } else {
                     $this->return_ajax_error();
@@ -78,6 +78,8 @@ class Projects extends GF_Global_controller {
                 
                 break;
             case 'addReward':
+                $this->load->model('reward_model');
+                
                 $data = array(
                     'project_id' => $pid,
                     'description' => $this->input->post('add-rewards-description'),
@@ -99,7 +101,7 @@ class Projects extends GF_Global_controller {
                 }
                 $data = array_merge($data, $delivery);
                 
-                $rid = $this->project_model->addReward($data);
+                $rid = $this->reward_model->add($data);
                 
                 if ($rid) {
                     $this->load->library('parser');
@@ -130,10 +132,12 @@ class Projects extends GF_Global_controller {
      */
 
     public function explore() {
-        $categories = $this->project_model->getDetailedCategories();
+        $this->load->model('category_model');
+        
+        $categories = $this->category_model->get_list();
         $this->data['categories'] = $categories;
 
-        $this->data['view_title'] = 'Explorar categorÃƒÂ­as';
+        $this->data['view_title'] = 'Explorar categorias';
         $this->load->view('global/header', $this->data);
         $this->load->view('projects/explore');
         $this->load->view('global/footer');
@@ -144,15 +148,18 @@ class Projects extends GF_Global_controller {
      */
 
     public function category($category_id = 0) {
-        $cat_results = $this->project_model->getCategories();
+        $this->load->model('category_model');
+        
+        $cat_results = $this->category_model->get_list();
         $categories = array();
+        
         foreach ($cat_results as $cat) {
             $categories[$cat->category_id] = $cat->name;
         }
         $this->data['categories'] = $categories;
 
         if (isset($category_id) && $category_id > 0) {
-            $projects = $this->project_model->getCategoryProjects($category_id);
+            $projects = $this->category_model->get_projects($category_id);
             if (isset($projects) && !empty($projects)) {
                 foreach ($projects as $project) {
                     $project->picture = $this->format_img_src($project->picture);
@@ -160,7 +167,7 @@ class Projects extends GF_Global_controller {
                 $this->data['projects'] = $projects;
             }
 
-            $category_name = $this->project_model->getCategoryName($category_id);
+            $category_name = $this->category_model->get_name($category_id);
             $this->data['category_name'] = $category_name;
         }
 
@@ -177,7 +184,7 @@ class Projects extends GF_Global_controller {
     public function mine() {
         $this->requires_login();
 
-        $projects = $this->project_model->getUserOverview($this->session->user_id);
+        $projects = $this->project_model->get_by_owner($this->session->user_id);
 
         if (isset($projects) && !empty($projects)) {
             foreach ($projects as $p) {
@@ -200,7 +207,7 @@ class Projects extends GF_Global_controller {
     public function create() {
         $this->requires_login();
 
-        $categories = $this->project_model->getDetailedCategories();
+        $categories = $this->category_model->get_list();
         $this->data['categories'] = $categories;
 
         $this->data['view_title'] = 'Crear un proyecto';
@@ -264,7 +271,7 @@ class Projects extends GF_Global_controller {
             'category' => intval($this->input->post('q-category'))
         );
 
-        $project_id = $this->project_model->createProject($project);
+        $project_id = $this->project_model->create($project);
 
         if (isset($project_id)) {
             // Primero las imagenes por defecto
@@ -287,7 +294,7 @@ class Projects extends GF_Global_controller {
             );
 
             $this->load->model('picture_model');
-            $this->picture_model->saveProjectImage($refs);
+            $this->picture_model->save_project_picture($refs);
             
             redirect(site_url('projects/edit/' . $project_id));
         } else {
@@ -310,13 +317,21 @@ class Projects extends GF_Global_controller {
 
             $this->load->library('parser');
             $this->load->library('table');
+            $this->load->model('category_model');
+            $this->load->model('reward_model');
+            $this->load->model('bank_model');
+            $this->load->model('faq_model');
+            $this->load->model('team_model');
+            $this->load->model('team_application_model');
+            $this->load->model('project_resource_model');
+            
             $ttemplate = array(
                 'table_open' => '<table class="table table-hover">'
             );
             $this->table->set_template($ttemplate);
 
             // Info del proyecto
-            $project = $this->project_model->getProjectProfile($project_id);
+            $project = $this->project_model->get($project_id);
             $project->picture = $this->format_img_src($project->picture);
             $project->owner_picture = $this->format_img_src($project->owner_picture);
             $project->owner_registered = date('d M Y', strtotime($project->owner_registered));
@@ -324,7 +339,7 @@ class Projects extends GF_Global_controller {
             $this->data['project'] = $project;
 
             // Miembros del equipo
-            $members = $this->project_model->getMembers($project_id);
+            $members = $this->team_model->get_list($project_id);
             $members_html = array();
 
             foreach ($members as $member) {
@@ -341,7 +356,7 @@ class Projects extends GF_Global_controller {
 
             // Vacantes
             $this->table->set_heading('Rol', 'Cupos', 'Cupos utilizados', 'Descripci&oacute;n', '');
-            $vacants = $this->project_model->getVacants($project_id);
+            $vacants = $this->team_model->get_roles($project_id);
 
             foreach ($vacants as $vac) {
                 $vac[] = '<button class="no-button" type="button" data-toggle="modal" data-target="#modal-role" data-r="' . $vac['role_name']
@@ -356,7 +371,7 @@ class Projects extends GF_Global_controller {
             $this->table->clear();
 
             // Postulaciones
-            $applications = $this->project_model->getApplications($project_id);
+            $applications = $this->team_application_model->get_list($project_id);
             $apps_html = array();
 
             foreach ($applications as $app) {
@@ -369,7 +384,7 @@ class Projects extends GF_Global_controller {
             $this->data['applications'] = $apps_html;
 
             // Categorias
-            $cat_results = $this->project_model->getCategories();
+            $cat_results = $this->category_model->get_list();
             $categories = array();
             foreach ($cat_results as $cat) {
                 $categories[$cat->category_id] = $cat->name;
@@ -378,7 +393,7 @@ class Projects extends GF_Global_controller {
 
             // Recursos
             $this->table->set_heading('Recurso', 'Costo', 'Cantidad', 'Utilizaci&oacute;n', 'Importante', '');
-            $resources = $this->project_model->getResources($project_id);
+            $resources = $this->project_resource_model->get_list($project_id);
 
             foreach ($resources as $r) {
                 $r['required'] = $r['required'] ? 'Si' : 'No';
@@ -396,7 +411,7 @@ class Projects extends GF_Global_controller {
             $this->table->clear();
 
             // Preguntas frecuentes
-            $faq = $this->project_model->getFAQ($project_id);
+            $faq = $this->faq_model->get_list($project_id);
             $this->data['faq'] = $faq;
             
             // Tipos de financiamiento
@@ -408,7 +423,7 @@ class Projects extends GF_Global_controller {
             $this->data['funding_modes'] = $funding_modes;
             
             // Bancos
-            $banks = $this->project_model->getBanks();
+            $banks = $this->bank_model->get_list();
             $bank_array = array();
             
             foreach ($banks as $b) {
@@ -425,7 +440,7 @@ class Projects extends GF_Global_controller {
             $this->data['bank_acc_types'] = $bank_acc_types;
             
             // Recompensas
-            $rewards = $this->project_model->getRewards($project_id);
+            $rewards = $this->reward_model->get_list($project_id);
             $rewards_html = array();
             
             foreach ($rewards as $r) {
@@ -459,7 +474,7 @@ class Projects extends GF_Global_controller {
             show_404(null, false);
         }
         
-        $project = $this->project_model->getProjectProfile($project_id);
+        $project = $this->project_model->get($project_id);
         
         if (!isset($project)) {
             show_404(null, false);
@@ -473,6 +488,11 @@ class Projects extends GF_Global_controller {
         
         $this->load->library('parser');
         $this->load->library('table');
+        $this->load->model('reward_model');
+        $this->load->model('faq_model');
+        $this->load->model('project_resource_model');
+        $this->load->model('team_model');
+        
         $ttemplate = array(
             'table_open' => '<table class="table table-hover">'
         );
@@ -485,7 +505,7 @@ class Projects extends GF_Global_controller {
         $this->data['project'] = $project;
 
         // Vacantes
-        $vacants = $this->project_model->getAvailableVacants($project_id);
+        $vacants = $this->team_model->get_available_roles($project_id);
         $vacs_html = array();
 
         foreach ($vacants as $vac) {
@@ -497,10 +517,10 @@ class Projects extends GF_Global_controller {
         $this->data['vacants'] = $vacs_html;
 
         // Miembros del equipo
-        $membs = $this->project_model->getMembers($project_id);
+        $membs = $this->team_model->get_list($project_id);
         $members = array();
 
-        $leader = $this->project_model->getTeamLeader($project_id);
+        $leader = $this->team_model->get_leader($project_id);
         $leader['img_src'] = $this->format_img_src($leader['img_src']);
         $leader['profile_url'] = site_url('users/u/' . $leader['member_id']);
         $leader['role_name'] = 'L&iacute;der del proyecto';
@@ -518,7 +538,7 @@ class Projects extends GF_Global_controller {
 
         // Recursos
         $this->table->set_heading('Recurso', 'Costo', 'Cantidad', 'Utilizaci&oacute;n', 'Importante', '');
-        $resources = $this->project_model->getResources($project_id);
+        $resources = $this->project_resource_model->get_list($project_id);
         foreach ($resources as $r) {
             $r['required'] = $r['required'] ? 'Si' : 'No';
             $this->table->add_row(array_slice($r, 1));
@@ -527,11 +547,11 @@ class Projects extends GF_Global_controller {
         $this->table->clear();
 
         // Preguntas frecuentes
-        $faq = $this->project_model->getFAQ($project_id);
+        $faq = $this->faq_model->get_list($project_id);
         $this->data['faq'] = $faq;
         
         // Recompensas
-        $rewards = $this->project_model->getRewards($project_id);
+        $rewards = $this->reward_model->get_list($project_id);
         $rewards_html = array();
         
         $no_reward = array(
@@ -551,7 +571,7 @@ class Projects extends GF_Global_controller {
         
         foreach ($rewards as $reward) {
             $reward['delivery_type_text'] = $this->delivery_types[$reward['delivery_type']];
-            $reward['backers_amount'] = $this->project_model->countRewardBackers($reward['reward_id']);
+            $reward['backers_amount'] = $this->reward_model->count_backers($reward['reward_id']);
             $reward['project_id'] = $project_id;
             $reward['limit'] = $reward['limit'] == 0 ? 'Ilimitado' : $reward['limit'];
             
@@ -586,41 +606,53 @@ class Projects extends GF_Global_controller {
         if ($this->isOwner($project_id) && isset($action)) {
             switch ($action) {
                 case 'add':
-                    $role = $this->input->post('role');
-                    $amount = $this->input->post('amount');
-                    $description = $this->input->post('description');
-                    $result = $this->project_model->addRole($project_id, $role, $amount, $description);
+                    $this->load->model('role_model');
+                    
+                    $data = array(
+                        'project_id' => $project_id,
+                        'role_name' => $this->input->post('role'),
+                        'vacants_amount' => $this->input->post('amount'),
+                        'role_description' => $this->input->post('description')
+                    );
+                    $result = $this->role_model->add($data);
 
-                    if ($result != NULL) {
+                    if ($result) {
                         $this->return_ajax_success($result);
                     } else {
                         $this->return_ajax_error('Error al intentar crear la vacante');
                     }
                     break;
                 case 'edit':
+                    $this->load->model('role_model');
+                    
                     $role_id = $this->input->post('role_id');
-                    $role = $this->input->post('role');
-                    $amount = $this->input->post('amount');
-                    $description = $this->input->post('description');
+                    $data = array(
+                        'role_name' => $this->input->post('role'),
+                        'vacants_amount' => $this->input->post('amount'),
+                        'role_description' => $this->input->post('description')
+                    );
 
-                    if ($this->project_model->editRole($role_id, $role, $amount, $description)) {
+                    if ($this->role_model->edit($role_id, $data)) {
                         $this->return_ajax_success();
                     } else {
                         $this->return_ajax_error('Error al intentar editar la vacante');
                     }
                     break;
                 case 'remove':
+                    $this->load->model('role_model');
+                    $this->load->model('team_model');
+                    
                     $role_id = $this->input->post('role');
 
                     if (!isset($role_id)) {
                         $this->return_ajax_error();
                     }
 
-                    if ($this->project_model->countMembersInRole($project_id, $role_id) > 0) {
+                    if ($this->team_model->count_in_role($project_id, $role_id) > 0) {
                         $this->return_ajax_error('Existen miembros ocupando este rol. Por favor desvinculalos del equipo primero, si realmente quieres eliminar el rol.');
                     }
 
-                    if ($this->project_model->removeRole($project_id, $role_id)) {
+                    if ($this->role_model->remove($project_id, $role_id)) {
                         $this->return_ajax_success();
                     } else {
                         $this->return_ajax_error('Error al intentar eliminar la vacante');
@@ -648,14 +680,17 @@ class Projects extends GF_Global_controller {
                 if ($this->isOwner($project_id) && isset($action)) {
                     switch ($action) {
                         case 'remove':
+                            $this->load->model('role_model');
+                            $this->load->model('team_model');
+                            
                             $user_id = $this->input->post('uID');
 
                             // No se puede eliminar al lider del equipo
-                            if (isset($user_id) && $user_id > 0 && !$this->project_model->userIsLeader($project_id, $user_id)) {
-                                $role = $this->project_model->getUserRole($project_id, $user_id);
+                            if (isset($user_id) && $user_id > 0 && !$this->team_model->is_leader($project_id, $user_id)) {
+                                $role = $this->team_model->user_role($project_id, $user_id);
 
-                                if ($this->project_model->removeMember($project_id, $user_id)) {
-                                    $this->project_model->updateVacantsUsed($project_id, $role, '-1');
+                                if ($this->team_model->remove_member($project_id, $user_id)) {
+                                    $this->role_model->update_occupied($project_id, $role, '-1');
 
                                     $this->return_ajax_success();
                                 } else {
@@ -689,13 +724,18 @@ class Projects extends GF_Global_controller {
                 if (isset($action)) {
                     switch ($action) {
                         case 'add':
-                            $role = $this->input->post('role');
-                            $user_id = $this->session->user_id;
-                            $message = $this->input->post('msg');
+                            $this->load->model('team_application_model');
+                            
+                            $app = array(
+                                'project_id' => $project_id,
+                                'role_id' => $this->input->post('role'),
+                                'user_id' => $this->session->user_id,
+                                'message' => $this->input->post('msg')
+                            );
 
                             if (isset($role) && $role > 0 && !$this->isOwner($project_id)) {
                                 // $project_id no es necesario, pero se utiliza por seguridad
-                                if ($this->project_model->addApplication($project_id, $role, $user_id, $message)) {
+                                if ($this->team_application_model->add($app)) {
                                     $this->return_ajax_success();
                                 } else {
                                     $this->return_ajax_error('Ocurrio un error al procesar la solicitud.');
@@ -705,23 +745,27 @@ class Projects extends GF_Global_controller {
                             }
                             break;
                         case 'accept':
+                            $this->load->model('role_model');
+                            $this->load->model('team_model');
+                            $this->load->model('team_application_model');
+                            
                             $app_id = $this->input->post('appID');
 
                             if (isset($app_id) && $app_id > 0 && $this->isOwner($project_id)) {
                                 // $project_id no es necesario, pero se utiliza por seguridad
-                                if ($this->project_model->acceptApplication($project_id, $app_id)) {
-                                    $data = $this->project_model->getApplication($app_id);
+                                if ($this->team_application_model->accept($project_id, $app_id)) {
+                                    $data = $this->team_application_model->get($app_id);
 
-                                    if ($this->project_model->addMember($data)) {
+                                    if ($this->team_model->add_member($data)) {
                                         $this->load->library('parser');
-                                        $member = $this->project_model->getTeamMember($project_id, $data['member_id']);
+                                        $member = $this->team_model->get_member($project_id, $data['member_id']);
                                         $member['img_src'] = $this->format_img_src($member['img_src']);
                                         $member['profile_url'] = site_url('users/u/' . $member['member_id']);
                                         $member['leader_icon'] = '';
                                         $member['remove_button'] = '<button type="button" class="btn btn-primary remove_member_js" data-id="' . $member['member_id'] . '" data-u="member_u_' . $member['member_id'] . '">Desvincular</button>';
                                         $html = $this->parser->parse('projects/fragments/member', $member, true);
 
-                                        $this->project_model->updateVacantsUsed($project_id, $data['role_id'], '+1');
+                                        $this->role_model->update_occupied($project_id, $data['role_id'], '+1');
 
                                         $this->return_ajax_success('Agregado al equipo.', array('el' => $html));
                                     } else {
@@ -735,10 +779,13 @@ class Projects extends GF_Global_controller {
                             }
                             break;
                         case 'reject':
+                            $this->load->model('team_application_model');
+                            
                             $app_id = $this->input->post('appID');
 
                             if (isset($app_id) && $app_id > 0 && $this->isOwner($project_id)) {
-                                if ($this->project_model->rejectApplication($project_id, $app_id)) {
+                                
+                                if ($this->team_application_model->reject($project_id, $app_id)) {
                                     $this->return_ajax_success('Solicitud rechazada.');
                                 } else {
                                     $this->return_ajax_error('Ocurrio un error al procesar la solicitud.');
@@ -769,6 +816,8 @@ class Projects extends GF_Global_controller {
                 if ($this->isOwner($project_id) && isset($action)) {
                     switch ($action) {
                         case 'add':
+                            $this->load->model('project_resource_model');
+                            
                             $data = array(
                                 'project_id' => $project_id,
                                 'name' => $this->input->post('name'),
@@ -777,7 +826,7 @@ class Projects extends GF_Global_controller {
                                 'detail' => $this->input->post('description'),
                                 'required' => $this->input->post('required') == 'on' ? true : false
                             );
-                            $result = $this->project_model->addResource($data);
+                            $result = $this->project_resource_model->add($data);
 
                             if ($result != NULL) {
                                 $this->return_ajax_success($result);
@@ -840,7 +889,7 @@ class Projects extends GF_Global_controller {
                                 'target_group' => $this->input->post('target')
                             );
 
-                            if ($this->project_model->updateInfo($project_id, $data)) {
+                            if ($this->project_model->update($project_id, $data)) {
                                 $this->return_ajax_success();
                             } else {
                                 $this->return_ajax_error();
@@ -853,7 +902,7 @@ class Projects extends GF_Global_controller {
                                     'extra_info' => base64_encode($this->input->post('extra'))
                                 );
 
-                                if ($this->project_model->updateInfo($project_id, $data)) {
+                                if ($this->project_model->update($project_id, $data)) {
                                     $this->return_ajax_success();
                                 } else {
                                     log_message('debug', 'Error al intentar guardar los cambios. ' . $info);
@@ -882,6 +931,8 @@ class Projects extends GF_Global_controller {
         if (!$this->is_ajax() || !isset($project_id)) {
             $this->return_ajax_error();
         }
+        
+        $this->load->model('faq_model');
 
         $quest = $this->input->post('question');
         $answ = $this->input->post('answer');
@@ -890,7 +941,7 @@ class Projects extends GF_Global_controller {
             $this->return_ajax_error();
         }
 
-        if ($this->project_model->addFAQ($project_id, $quest, $answ)) {
+        if ($this->faq_model->add($project_id, $quest, $answ)) {
             $this->return_ajax_success();
         } else {
             $this->return_ajax_error();
@@ -903,13 +954,15 @@ class Projects extends GF_Global_controller {
      */
     public function donate() {
         $this->requires_login();
+        $this->load->model('reward_model');
         
         $project_id = $this->input->post('project-id');
         $backing = $this->input->post('backing');
-        $reward = $this->project_model->getReward($backing['reward_id']);
+        $reward = $this->reward_model->get($backing['reward_id']);
+        
         if (isset($reward)) {
             $reward->delivery_type_text = $this->delivery_types[$reward->delivery_type];
-            $reward_backers_amount = $this->project_model->countRewardBackers($reward->reward_id);
+            $reward_backers_amount = $this->reward_model->count_backers($reward->reward_id);
 
             $available = $reward->limit == 0 || $reward->limit > $reward_backers_amount;
         } else {
@@ -934,7 +987,7 @@ class Projects extends GF_Global_controller {
     }
 
     protected function isOwner($project_id) {
-        return $this->project_model->checkOwner($this->session->user_id, $project_id);
+        return $this->project_model->is_owner($this->session->user_id, $project_id);
     }
 
 }

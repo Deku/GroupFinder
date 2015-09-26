@@ -115,7 +115,7 @@ class Pictures extends GF_Global_controller {
 
             // Actualizamos las referencias en la base de datos
             $this->load->model('picture_model');
-            $result = $this->picture_model->saveProfileImageRef($refs);
+            $result = $this->picture_model->save_user_picture($refs);
             
             if ($result)
             {
@@ -157,7 +157,7 @@ class Pictures extends GF_Global_controller {
             );
             
             $this->load->model('picture_model');
-            $result = $this->picture_model->saveProfileImageRef($refs);
+            $result = $this->picture_model->save_user_picture($refs);
             
             if ($result)
             {

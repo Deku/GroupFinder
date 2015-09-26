@@ -39,11 +39,12 @@ class GF_Global_controller extends CI_Controller {
         if ($this->session->loggedIn)
         {
             $this->load->model('conversation_model');
+            $this->load->model('conversation_message_model');
             //$this->load->model('notification_model');
             $this->load->library('parser');
             
-            $unread_messages = intval($this->conversation_model->countUnreadMessages($this->session->user_id));
-            $conversations = $this->conversation_model->getUnreadConversations($this->session->user_id);
+            $unread_messages = intval($this->conversation_message_model->count_unread($this->session->user_id));
+            $conversations = $this->conversation_model->get_unread_list($this->session->user_id);
             
             foreach($conversations as $c) {
                 $c['img_src'] = $this->format_img_src($c['img_src']);
@@ -87,7 +88,7 @@ class GF_Global_controller extends CI_Controller {
         $this->load->library('email');
         $this->load->library('parser');
         
-        $mail_template = $this->email_model->getTemplate($mail_id);
+        $mail_template = $this->email_model->get($mail_id);
         
         if (!empty($mail_template))
         {
@@ -145,12 +146,12 @@ class GF_Global_controller extends CI_Controller {
     
     public function update_session() {
         // Obtenemos los datos del usuario para almacenarlos en la sesion
-        $this->load->model('account_model');
-        $userdata = $this->account_model->get($this->session->user_id);
+        $this->load->model('user_model');
+        $userdata = $this->user_model->get($this->session->user_id);
         
         // Obtenemos la foto del usuario en sus distintos tamaños
         $this->load->model('picture_model');
-        $profile_pics = $this->picture_model->getProfilePics($this->session->user_id);
+        $profile_pics = $this->picture_model->get_by_user($this->session->user_id);
 
         $_SESSION['user_email'] = $userdata->email;
         $_SESSION['user_realname'] = $userdata->name;
@@ -220,13 +221,13 @@ class GF_Global_controller extends CI_Controller {
    
    public function set_session($user_id) {
        // Primero registramos el login, asi aparece reflejado al obtener los datos del usuario despues
-        $this->account_model->register_login($user_id, $this->get_client_ip());
+        $this->user_model->register_login($user_id, $this->get_client_ip());
 
         // Obtenemos los datos del usuario para almacenarlos en la sesion
-        $userdata = $this->account_model->get($user_id);
+        $userdata = $this->user_model->get($user_id);
         $this->load->model('picture_model');
         // Obtenemos la foto del usuario en sus distintos tamaños
-        $profile_pics = $this->picture_model->getProfilePics($user_id);
+        $profile_pics = $this->picture_model->get_by_user($user_id);
 
         $_SESSION['user_id'] = $userdata->user_id;
         $_SESSION['username'] = $userdata->username;
@@ -261,13 +262,13 @@ class GF_Global_controller extends CI_Controller {
                
                $this->load->model('account_model');
                
-               $user = $this->account_model->getKeepLoggedToken($identifier);
+               $user = $this->user_model->get_persistent_session($identifier);
                
                if ($user) {
                    if ($user->keeplogged_token == $token) {
                        $this->set_session($user->user_id);
                    } else {
-                       $this->account_model->remove_persistent_session($user->user_id);
+                       $this->user_model->remove_persistent_session($user->user_id);
                    }
                }
            }
