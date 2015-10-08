@@ -8,7 +8,7 @@ $(document).ready( function() {
         $.ajax({
              type: "POST",
              dataType: "json",
-             url: SITE_URL + '/conversations/sendChatMessage/',
+             url: SITE_URL + '/conversations/send-chat-message/',
              data: $.param(data),
              beforeSend: function(){
                  $('#send_status').addClass('fa-spinner fa-pulse');

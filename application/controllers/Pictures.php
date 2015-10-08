@@ -1,32 +1,41 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+/**
+ * Pictures Controller
+ * 
+ * Handles the profile pictures across the site
+ *
+ * @author Jose Gonzalez
+ */
 class Pictures extends GF_Global_controller {
     
     public function __construct() {
         parent::__construct();
     }
     
+    /**
+     * Uploads a file and sets as the user avatar
+     */
     public function upload() {
         $this->requires_login();
         
         if ($this->input->post('source'))
         {
             /*
-             * PASO 1 => Cargar la foto al directorio del usuario
+             * STEP 1 => Upload the picture to the user's assets folder
              */
 
-            // En la db despues lo almacenaremos para ocuparlo en los <img>
             $RELATIVE_PATH = 'assets/images/';
-            // Foto para un usuario o para un proyecto?
             $TYPE_PATH = '';
-            // Configuracion para guardar los archivos en disco
+            // Upload helper config
             $config = array(
                 'upload_path' => FCPATH . $RELATIVE_PATH,
                 'allowed_types' => 'gif|jpg|png',
                 'max_size' => '2048'
             );
 
+            // Is this a user or project profile?
             switch ($this->input->post('source'))
             {
                 case sha1('profile-edit'):
@@ -37,12 +46,10 @@ class Pictures extends GF_Global_controller {
                     break;
             }
 
-            // Establecemos el directorio final donde guardaremos las imagenes
             $config['upload_path'] .= $TYPE_PATH;
 
-            // Verificamos si la carpeta tiene archivos y los renombramos
-            // Asi en caso de error no reemplazamos lo que ya estaba
-            $this->prepare_folder_for_upload($config['upload_path']);
+            // Prepare folder for upload
+            $this->prepare_folder($config['upload_path']);
 
             $this->load->library('upload', $config);
 
@@ -51,15 +58,14 @@ class Pictures extends GF_Global_controller {
                 $this->return_ajax_error($this->upload->display_errors());
             }
             /*
-             * PASO 2 => Procesar las fotos con Zebra y generar los distintos tamaños
+             * STEP 2 => Process the image with ZebraImage and generate the different views
              */
 
             $this->load->library('zebra_image');
-            // Imagen original subida al servidor
+
             $this->zebra_image->source_path = $this->upload->data('full_path');
-            // Referencias a insertar en la db
+            // File references to store in db
             $refs = array();
-            // En caso de que existan errores
             $errors = array();
 
             // small nav image
@@ -104,35 +110,38 @@ class Pictures extends GF_Global_controller {
                 array_push($errors, $this->zebra_image->error);
             }
 
-            // Si no hubieron errores en cargar las miniaturas
+            // Error check
             if (count($errors) > 0)
             {
                 log_message('error', print_r($errors));
 
-                echo false;
-                return;
+                $this->return_ajax_error();
             }
 
-            // Actualizamos las referencias en la base de datos
+            // Save the references to db
             $this->load->model('picture_model');
-            $result = $this->picture_model->saveProfileImageRef($refs);
-            
+            $result = $this->picture_model->save_user_picture($refs);
+
+            // If the save is successful, clean the folder and update session
             if ($result)
             {
-                // Si todo fue ok, podemos borrar las fotos viejas y actualizamos la sesion
                 $this->delete_old_pictures($this->upload->data('file_path'));
                 $this->update_session();
+
                 echo $this->format_img_src($refs[2]['img_src']);
             } else {
-                // O eliminamos las fotos cargadas y retornamos false para indicar un error
                 $this->rollback_changes($this->upload->data('file_path'));
-                echo false;
+
+                $this->return_ajax_error();
             }
         }
     }
     
-    public function useGravatar() {
-        if ($this->is_ajax())
+    /**
+     * Uses the picture provided by Gravatar.com
+     */
+    public function use_gravatar() {
+        if ($this->input->is_ajax_request())
         {
             $img_small = 'http://www.gravatar.com/avatar/' . md5(strtolower(trim($this->session->user_email))) . '?d=mm&s=40';
             $img_medium = 'http://www.gravatar.com/avatar/' . md5(strtolower(trim($this->session->user_email))) . '?d=mm&s=85';
@@ -157,7 +166,7 @@ class Pictures extends GF_Global_controller {
             );
             
             $this->load->model('picture_model');
-            $result = $this->picture_model->saveProfileImageRef($refs);
+            $result = $this->picture_model->save_user_picture($refs);
             
             if ($result)
             {
@@ -168,7 +177,11 @@ class Pictures extends GF_Global_controller {
         }
     }
     
-    public function prepare_folder_for_upload($dir) {
+    /**
+     * Checks a folder and renames all the content inside it
+     * @param string $dir Path of the folder to be prepared
+     */
+    public function prepare_folder($dir) {
         if (!file_exists($dir))
         {
             mkdir($dir);
@@ -189,7 +202,11 @@ class Pictures extends GF_Global_controller {
         }
         
     }
-    
+
+    /**
+     * Deletes the files starting by "_" (renamed by prepare_folder($dir))
+     * @param string $dir Path of the folder to be cleaned
+     */
     private function delete_old_pictures($dir) {
         if (count(glob($dir.'*.jpg')) > 0)
         {
@@ -207,7 +224,11 @@ class Pictures extends GF_Global_controller {
             }
         }
     }
-    
+
+    /**
+     * Rollbacks the changes made to files in the folder (renamed by prepare_folder())
+     * @param string $dir Path of the folder
+     */
     private function rollback_changes($dir) {
         if (count(glob($dir.'*.jpg')) > 0)
         {

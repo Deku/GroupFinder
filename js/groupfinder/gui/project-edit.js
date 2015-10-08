@@ -13,6 +13,7 @@ $(document).ready(function () {
         $.ajax({
             type: "POST",
             dataType: "json",
+            data: $.param($('#form-funding-goal').serializeArray()) + '&pid=' + $('#pid').val(),
             url: SITE_URL + '/projects/async/saveFundingGoal',
             success: function () {
                 swal('Guardado!', 'Meta guardada', 'success');
@@ -109,35 +110,21 @@ $(document).ready(function () {
     /*
      * Agregar una nueva vacante
      */
-    $('#button-add-vacant').click(function (e) {
+    $('#form-add-role').submit(function (e) {
         e.preventDefault();
-        var role = $('#add-vacant-role').val();
-        var amount = $('#add-vacant-amount').val();
-        var description = $('#add-vacant-description').val();
 
-        if (role == '' && amount <= 0 && description == '') {
-            alert('Valores no validos.');
-            return;
-        }
-
-        var data = {action: 'add', role: role, amount: amount, description: description};
         var sel = '#add-vacant-notification';
 
         $.ajax({
             type: "POST",
             dataType: "json",
-            url: SITE_URL + '/projects/vacants/' + pID,
-            data: $.param(data),
+            url: SITE_URL + '/projects/async/add-role',
+            data: $.param($('#form-add-role').serializeArray()) + '&pid=' + $('#pid').val(),
             beforeSend: function () {
                 display_notification(sel, 'update');
             },
             success: function (response) {
                 display_notification(sel, 'success');
-                var item = document.createElement('span');
-                Vacants.config_role_el($(item), role, amount, description);
-                $(item).attr('data-rid', response.success_message);
-                $('#vacants-wrapper').append($(item).slideDown());
-
             },
             error: function (response) {
                 display_notification(sel, 'error', response.error_message);
@@ -310,7 +297,7 @@ $(document).ready(function () {
 
     $('.remove_member_js').click(function (e) {
         e.preventDefault();
-        if (confirm('Â¿Seguro que deseas desvincular a esta persona de tu equipo?')) {
+        if (confirm('Seguro que deseas desvincular a esta persona de tu equipo?')) {
             var origin = $(event.target);
             var uID = origin.data('id');
             var sel = '#' + origin.data('u');
@@ -473,8 +460,8 @@ Vacants.prototype.edit_role = function (obj, rid) {
     $.ajax({
         type: "POST",
         dataType: "json",
-        url: SITE_URL + '/projects/vacants/' + pID,
-        data: $.param(data),
+        url: SITE_URL + '/projects/async/edit-role',
+        data: $.param(data) + '&pid=' + $('#pid').val(),
         beforeSend: function () {
             display_notification(sel, 'update')
         },
@@ -512,8 +499,8 @@ Vacants.prototype.delete_role = function (obj, role) {
         $.ajax({
             type: "POST",
             dataType: "json",
-            url: SITE_URL + '/projects/vacants/' + pID,
-            data: $.param(data),
+            url: SITE_URL + '/projects/async/delete-role',
+            data: $.param(data) + '&pid=' + $('#pid').val(),
             success: function (response) {
                 swal("Eliminado!", "El rol ha sido eliminado correctamente.", "success");
                 $(obj).fadeOut().remove();

@@ -8,7 +8,7 @@
                 <?php 
                     if (isset($errorMsg)) { echo '<div class="alert alert-danger">' . $errorMsg . '</div>'; }
                     echo validation_errors('<div class="alert alert-danger">', '</div>');
-                    echo form_open('auth/processLogin'); ?>
+                    echo form_open('auth/do-login'); ?>
                     <div class="row">
                         <div class="col-xs-12 col-md-12">
                             <div class="form-group">

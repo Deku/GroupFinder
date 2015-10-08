@@ -123,4 +123,8 @@ class Tests extends GF_Global_controller {
         $this->load->view('tests/khipu');
         $this->load->view('global/footer');
     }
+
+    public function async($action) {
+        echo "<h1>It works!</h1>You requested {$action}";
+    }
 }

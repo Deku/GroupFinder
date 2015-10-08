@@ -9,7 +9,7 @@ $('a.remove_friend').click( function (e) {
             $.ajax({
                  type: "POST",
                  dataType: "json",
-                 url: SITE_URL + '/users/removeFriend/',
+                 url: SITE_URL + '/users/remove-friend/',
                  data: $.param(data),
                  beforeSend: function(){
                      display_notification(sel, 'update');
@@ -34,7 +34,7 @@ function send_message(el) {
    $.ajax({
         type: "POST",
         dataType: "json",
-        url: SITE_URL + '/conversations/sendMessage/',
+        url: SITE_URL + '/conversations/send-message/',
         data: $.param(data),
         beforeSend: function(){
             display_notification(sel, 'update');

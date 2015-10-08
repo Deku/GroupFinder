@@ -8,7 +8,7 @@ $(document).ready( function() {
        $.ajax({
             type: "POST",
             dataType: "json",
-            url: SITE_URL + '/users/sendFriendsRequest/' + ref_id,
+            url: SITE_URL + '/users/send-friend-request/' + ref_id,
             success: function(response) {
                 display_notification(sel, 'success', response.success_message);
             },

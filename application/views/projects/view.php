@@ -168,7 +168,7 @@
                                     ?>
                                 </div>
                             </div>
-                            <?php if (isset($vacants) && !empty($vacants)) : ?>
+                            <?php if (isset($roles) && !empty($roles)) : ?>
                                 <div class="col-xs-12 col-md-12">
                                     <h2 class="page-header"><i class="fa fa-search"></i> Vacantes abiertas</h2>
                                     <div class="row">
@@ -179,8 +179,8 @@
                                             <p>Este proyecto busca personas para las siguientes vacantes:</p>
                                             <div class="vacants">
                                                 <?php
-                                                    foreach ($vacants as $vacant) {
-                                                        echo $vacant;
+                                                    foreach ($roles as $role) {
+                                                        echo $role;
                                                     }
                                                 ?>
                                             </div>
@@ -189,7 +189,7 @@
                                 </div>
                             <?php endif; ?>
                         </div><!-- ./content -->
-                    </div><!-- ./tabpanel:vacants -->
+                    </div><!-- ./tabpanel:team -->
 
 
                     <!-- Costos -->

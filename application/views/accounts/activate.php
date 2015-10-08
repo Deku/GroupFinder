@@ -40,7 +40,7 @@
                 <?php 
                 if (isset($errorMsg)) { echo $errorMsg; }
                 echo validation_errors();
-                echo form_open('auth/processActivation'); ?>
+                echo form_open('auth/do-activate'); ?>
                     <div class="col-xs-12 col-md-8">
                         <div class="form-group">
                             <input type="text" id="activationCode" name="activationCode" class="form-control" placeholder="XXXXXXXXXXXX" required />

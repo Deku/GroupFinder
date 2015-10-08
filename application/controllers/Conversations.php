@@ -1,25 +1,30 @@
 <?php
 
 /**
- * Description of Conversations
+ * Conversations Controller
+ * 
+ * Handles the communication of users via private messages
  *
- * @author José González <maangx@gmail.com>
+ * @author Jose Gonzalez <maangx@gmail.com>
  */
 class Conversations extends GF_Global_controller {
     
     public function __construct() {
         parent::__construct();
         $this->load->model('conversation_model');
+        $this->load->model('conversation_message_model');
     }
     
-    /*
-     * Vista Todas las connversaciones
+    /**
+     * Conversations page
+     * 
+     * Lists all the active conversations
      */
     public function all() {
         $this->requires_login();
         
         $user_id = $this->session->user_id;
-        $conversations = $this->conversation_model->getConversationsList($user_id);
+        $conversations = $this->conversation_model->get_list($user_id);
         $html_conv = array();
         $this->load->library('parser');
         
@@ -32,22 +37,23 @@ class Conversations extends GF_Global_controller {
         
         $this->data['conversations'] = $html_conv;
         
-        $this->data['view_title'] = 'Mis conversaciones';
-        $this->load->view('global/header', $this->data);
-        $this->load->view('conversations/all_conversations');
-        $this->load->view('global/footer');
+        $this->load_view('Mis conversaciones', 'conversations/all_conversations');
     }
 
-    /*
-     * Vista Mensajes de la conversación
+    /**
+     * Conversation page
+     * 
+     * Shows the messages of an specific conversation
+     * 
+     * @param   int     $conv_id    Conversation id
      */
     public function messages($conv_id = 0) {
         $this->requires_login();
         
         if ($conv_id > 0) {
-            // Todas las conversaciones (barra lateral izquierda)
+            // List of other conversations
             $user_id = $this->session->user_id;
-            $conversations = $this->conversation_model->getConversationsList($user_id);
+            $conversations = $this->conversation_model->get_list($user_id);
             $html_conv = array();
             $this->load->library('parser');
 
@@ -61,8 +67,8 @@ class Conversations extends GF_Global_controller {
             $this->data['conversations'] = $html_conv;
             
             
-            // Mensajes de la conversacion
-            $messages = $this->conversation_model->getMessages($conv_id);
+            // This conversation's messages
+            $messages = $this->conversation_message_model->get_list($conv_id);
             $html_msg = array();
 
             foreach ($messages as $msg) {
@@ -73,26 +79,27 @@ class Conversations extends GF_Global_controller {
             $this->data['messages'] = $html_msg;
             $this->data['conversation_id'] = $conv_id;
             
-            $this->data['view_title'] = 'Mensajes';
-            $this->load->view('global/header', $this->data);
-            $this->load->view('conversations/conversation');
-            $this->load->view('global/footer');
+            $this->load_view('Mensajes', 'conversations/conversation');
         }
     }
     
-    public function sendMessage() {
-        if ($this->is_ajax())
+    /**
+     * MARKED FOR REWORK
+     * (Async) Sends a message to a user
+     */
+    public function send_message() {
+        if ($this->input->is_ajax_request())
         {
             $ref = $this->input->post('ref');
             $message = $this->input->post('message');
-            $conv_id = $this->conversation_model->getConversationId($ref, $this->session->user_id);
+            $conv_id = $this->conversation_model->get_id($ref, $this->session->user_id);
             
             if ($conv_id == 0)
             {
-                $conv_id = $this->conversation_model->createConversation($this->session->user_id, $ref);
+                $conv_id = $this->conversation_model->create($this->session->user_id, $ref);
             }
             
-            if ($this->conversation_model->addMessage($conv_id, $ref, $message))
+            if ($this->conversation_message_model->insert($conv_id, $ref, $message))
             {
                 $this->return_ajax_success('Mensaje enviado');
             } else {
@@ -101,8 +108,12 @@ class Conversations extends GF_Global_controller {
         }
     }
     
-    public function sendChatMessage() {
-        if ($this->is_ajax())
+    /**
+     * MARKED FOR REWORK
+     * (Async) Sends a message into an existing conversation
+     */
+    public function send_chat_message() {
+        if ($this->input->is_ajax_request())
         {
             $sender = $this->session->user_id;
             $conv_id = $this->input->post('ref');
@@ -116,17 +127,11 @@ class Conversations extends GF_Global_controller {
                 $receiver = $conversation->user_a;
             }
             
-            
-            if ($this->conversation_model->addMessage($conv_id, $sender, $message))
+            if ($this->conversation_message_model->insert($conv_id, $sender, $message))
             {
-                $msg = $this->conversation_model->getLastMessage($conv_id, $sender);
+                $msg = $this->conversation_message_model->get_last($conv_id, $sender);
                 $msg['img_src'] = $this->format_img_src($msg['img_src']);
                 $html = $this->parser->parse('conversations/fragments/message', $msg, true);
-                
-                $context = new ZMQContext();
-                $socket = $context->getSocket(ZMQ::SOCKET_PUSH, 'chat');
-                $socket->connect("tcp://localhost:5555");
-                $socket->send(json_encode(array('html' => $html)));
                 
                 $this->return_ajax_success('OK', array('html' => $html));
             } else {

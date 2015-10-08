@@ -34,7 +34,7 @@ function load_comments(t, i, l) {
     $.ajax({
         type: "POST",
         dataType: "json",
-        url: SITE_URL + '/comments/get',
+        url: SITE_URL + '/comments/load-comments',
         data: $.param(data),
         beforeSend: function(){
             $('#comments').prepend('<i class="fa fa-spinner fa-spin"></i> ');
