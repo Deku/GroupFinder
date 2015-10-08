@@ -81,7 +81,7 @@ class Team_model extends CI_Model {
     }
 
     /**
-     * Adds an user to the team
+     * Adds a user to the team
      * @param array $data
      * @return boolean
      */

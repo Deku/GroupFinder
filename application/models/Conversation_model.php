@@ -29,7 +29,7 @@ class Conversation_model extends CI_Model {
     }
 
     /**
-     * Gets the list of conversations associated with an user
+     * Gets the list of conversations associated with a user
      * @param   int     $user_id
      * @return  array
      */
@@ -50,7 +50,7 @@ class Conversation_model extends CI_Model {
     }
 
     /**
-     * Gets the list of unread conversations associated with an user
+     * Gets the list of unread conversations associated with a user
      * @param   int     $user_id
      * @return  array
      */

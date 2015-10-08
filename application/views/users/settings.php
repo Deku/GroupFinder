@@ -102,7 +102,7 @@
                                         </div>
                                         <div role="tabpanel" class="tab-pane active fade padding-top-sm" id="gravatar">
                                             <div id="gravatar-status"></div>
-                                            <?php echo anchor('pictures/useGravatar', 'Usar Gravatar', array('id' => 'profile-use-gravatar', 'class' => 'btn btn-default')); ?>
+                                            <?php echo anchor('pictures/use-gravatar', 'Usar Gravatar', array('id' => 'profile-use-gravatar', 'class' => 'btn btn-default')); ?>
                                         </div>
                                     </div>
                                 </div>
@@ -132,7 +132,7 @@
                                 <h3 class="panel-title">Cambiar contrase&ntilde;a</h3>
                             </div>
                             <div class="panel-body">
-                                <?php echo form_open('auth/changePassword', array('id' => 'change-pass-form')); ?>
+                                <?php echo form_open('auth/change-password', array('id' => 'change-pass-form')); ?>
                                     <div id="changepass-status"></div>
                                     <div class="form-group">
                                         <label for="old-password">Contrase&ntilde;a actual:</label>

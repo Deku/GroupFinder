@@ -10,7 +10,7 @@
             <?php
                 if (isset($errorMsg)) { echo $errorMsg; }
                 echo validation_errors('<div class="alert alert-error">', '</div>');
-                echo form_open('auth/processRegister');
+                echo form_open('auth/do-register');
             ?>
                 <div class="col-md-12">
                     <div class="form-group">

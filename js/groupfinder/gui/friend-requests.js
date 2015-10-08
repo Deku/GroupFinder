@@ -12,7 +12,7 @@ $(document).ready( function() {
        $.ajax({
             type: "POST",
             dataType: "json",
-            url: SITE_URL + '/users/processRequest/',
+            url: SITE_URL + '/users/process-request/',
             data: $.param(data),
             beforeSend: function(){
                 $('#req_info_'+rqID).hide();
@@ -43,7 +43,7 @@ $(document).ready( function() {
        $.ajax({
             type: "POST",
             dataType: "json",
-            url: SITE_URL + '/users/processRequest/',
+            url: SITE_URL + '/users/process-request/',
             data: $.param(data),
             beforeSend: function(){
                 $('#req_info_'+rqID).hide();

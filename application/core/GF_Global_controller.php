@@ -1,12 +1,12 @@
 <?php
+defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Controlador base, maneja operaciones utilizadas por
- * todos los demas controladores.
- * 
- * Esta clase se carga gracias al __autoload() al final de config.php
+ * Base Controller
  *
- * @author Jose Gonzalez
+ * Inherited by all the controllers of this project. Loaded by __autoload() in config.php
+ *
+ * @author Jose Gonzalez <maangx@gmail.com>
  */
 class GF_Global_controller extends CI_Controller {
     
@@ -34,7 +34,7 @@ class GF_Global_controller extends CI_Controller {
         $html_notifications = array();
         $html_conversations = array();
         
-        $this->checkPersistentSession();
+        $this->check_persistent_session();
         
         if ($this->session->loggedIn)
         {
@@ -62,27 +62,44 @@ class GF_Global_controller extends CI_Controller {
             'unread_conversations' => $html_conversations
         );
     }
-    
-    public function is_ajax() {
-        return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
-    }
 
+    /**
+     * Returns a successful ajax request (code 200)
+     * @param   string  $msg    (optional) Message to be sent back to the client
+     * @param   array   $extra  (optional) Extra options to be sent back as json object
+     */
     public function return_ajax_success($msg = '', $extra = array()) {
         header('Content-Type: application/json');
         echo json_encode(array('success_message' => $msg, 'extra' => $extra));
     }
 
+    /**
+     * Returns a failed ajax request (code 500)
+     * @param   string  $msg    (optional) Message to be sent back to the client
+     * @param   array   $extra  (optional) Extra options to be sent back as json object
+     */
     public function return_ajax_error($msg = 'Error al procesar la solicitud', $extra = array()) {
         header('HTTP/1.1 500 Internal Server Error');
         header('Content-Type: application/json; charset=UTF-8');
         die(json_encode(array('error_message' => $msg, 'extra' => $extra)));
     }
-    
-    // Incluye el base_url en caso de que la direccion apunte a un directorio local
+
+    /**
+     * If the resource path is local to the project, include the base path
+     * @param   string    $src    Resource path
+     * @return  string
+     */
     public function format_img_src($src) {
         return (preg_match('/^(http:)/', $src) ? '' : base_url()) . $src;
     }
-    
+
+    /**
+     * Sends an email
+     * @param   string  $mail_id
+     * @param   string  $receiver
+     * @param   array   $vars
+     * @return  bool
+     */
     public function send_email($mail_id, $receiver, $vars = array()) {
         $this->load->model('email_model');
         $this->load->library('email');
@@ -106,8 +123,11 @@ class GF_Global_controller extends CI_Controller {
         
         $_SESSION['emailSent'] = $this->email->send();
     }
-    
-    // Funcion para obtener la direccion ip del cliente. Retorna en formato IPv4 o IPv6
+
+    /**
+     * Gets the client's IP
+     * @return  string  IPv4 or IPv6
+     */
     function get_client_ip() {
         $ipaddress = '';
         
@@ -129,21 +149,30 @@ class GF_Global_controller extends CI_Controller {
         
         return $ipaddress;
     }
-    
+
+    /**
+     * Checks if the user is logged in
+     */
     public function requires_login() {
         if (!$this->session->loggedIn)
         {
             redirect('auth/login');
         }
     }
-    
+
+    /**
+     * Checks if the user is anonymous
+     */
     public function requires_guest() {
         if ($this->session->loggedIn)
         {
             redirect('portal/home');
         }
     }
-    
+
+    /**
+     * Updates the data stored in the current session
+     */
     public function update_session() {
         // Obtenemos los datos del usuario para almacenarlos en la sesion
         $this->load->model('user_model');
@@ -170,11 +199,11 @@ class GF_Global_controller extends CI_Controller {
     
     /**
     * Replace language-specific characters by ASCII-equivalents.
-    * @param string $s
-    * @return string
+    * @param    string  $s
+    * @return   string
     */
-   public function normalizeChars($s) {
-       $replace = array(
+    public function normalize_chars($s) {
+        $replace = array(
            'ъ'=>'-', 'Ь'=>'-', 'Ъ'=>'-', 'ь'=>'-',
            'Ă'=>'A', 'Ą'=>'A', 'À'=>'A', 'Ã'=>'A', 'Á'=>'A', 'Æ'=>'A', 'Â'=>'A', 'Å'=>'A', 'Ä'=>'Ae',
            'Þ'=>'B',
@@ -215,11 +244,15 @@ class GF_Global_controller extends CI_Controller {
            'ש'=>'w', 'ŵ'=>'w', 'Ŵ'=>'w',
            'ы'=>'y', 'ŷ'=>'y', 'ý'=>'y', 'ÿ'=>'y', 'Ÿ'=>'y', 'Ŷ'=>'y',
            'Ы'=>'y', 'ž'=>'z', 'З'=>'z', 'з'=>'z', 'ź'=>'z', 'ז'=>'z', 'ż'=>'z', 'ſ'=>'z', 'Ж'=>'zh', 'ж'=>'zh'
-       );
-       return strtr($s, $replace);
-   }
-   
-   public function set_session($user_id) {
+        );
+        return strtr($s, $replace);
+    }
+
+    /**
+     * Creates a new session
+     * @param   $user_id
+     */
+    public function set_session($user_id) {
        // Primero registramos el login, asi aparece reflejado al obtener los datos del usuario despues
         $this->user_model->register_login($user_id, $this->get_client_ip());
 
@@ -245,33 +278,66 @@ class GF_Global_controller extends CI_Controller {
         $_SESSION['img_large'] = $this->format_img_src($profile_pics[2]['img_src']);
         $_SESSION['loggedIn'] = true;
         session_write_close();
-   }
-   
-   private function checkPersistentSession() {
-       $this->load->helper('cookie');
-       
-       if (get_cookie('gf_keeplogged') && !$this->session->loggedIn) {
-           $data = get_cookie('gf_keeplogged');
-           $credentials = explode('___', $data);
-           
-           if (empty(trim($data)) || count($credentials) !== 2) {
-               redirect('portal/home');
-           } else {
-               $identifier = $credentials[0];
-               $token = sha1($credentials[1]);
-               
-               $this->load->model('account_model');
-               
-               $user = $this->user_model->get_persistent_session($identifier);
-               
-               if ($user) {
-                   if ($user->keeplogged_token == $token) {
-                       $this->set_session($user->user_id);
-                   } else {
-                       $this->user_model->remove_persistent_session($user->user_id);
-                   }
-               }
-           }
-       }
-   }
+    }
+
+    /**
+     * Checks if the client has a persistent session associated
+     */
+    private function check_persistent_session() {
+        $this->load->helper('cookie');
+
+        if (get_cookie('gf_keeplogged') && !$this->session->loggedIn) {
+            $data = get_cookie('gf_keeplogged');
+            $credentials = explode('___', $data);
+
+            if (empty(trim($data)) || count($credentials) !== 2) {
+                redirect('portal/home');
+            } else {
+                $identifier = $credentials[0];
+                $token = sha1($credentials[1]);
+
+                $this->load->model('user_model');
+
+                $user = $this->user_model->get_persistent_session($identifier);
+
+                if ($user) {
+                    if ($user->keeplogged_token == $token) {
+                        $this->set_session($user->user_id);
+                    } else {
+                        $this->user_model->remove_persistent_session($user->user_id);
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Loads a view with the default sections attached
+     * @param   string  $title  Text for the title tag
+     * @param   string  $view   Name of the view to load
+     */
+    public function load_view($title, $view) {
+        
+        $this->data['view_title'] = $title;
+        
+        $this->load->view('global/header', $this->data);
+        $this->load->view($view);
+        $this->load->view('global/footer');
+    }
+
+    /**
+     * Checks if it's a POST
+     * @return bool
+     */
+    public function is_post_request() {
+        return $this->input->method() == 'post';
+    }
+
+    /**
+     * Checks if it's a GET
+     * @return bool
+     */
+    public function is_get_request() {
+        return $this->input->method() == 'get';
+    }
 }

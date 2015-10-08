@@ -1,13 +1,24 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+/**
+ * Users Controller
+ *
+ *
+ *
+ * @author Jose Gonzalez <maangx@gmail.com>
+ */
 class Users extends GF_Global_controller {
     
     public function __construct() {
         parent::__construct();
         $this->load->model('user_model');
+        $this->load->model('friend_model');
     }
-    
+
+    /**
+     * User profile view
+     */
     public function u() {
         $user_id = $this->uri->segment(3);
 
@@ -33,13 +44,16 @@ class Users extends GF_Global_controller {
         $this->load->view('users/profile', $this->data);
         $this->load->view('global/footer');
     }
-    
+
+    /**
+     * Account configuration view
+     */
     public function settings() {
         $this->requires_login();
         
-        $this->load->model('account_model');
         $this->load->model('user_model');
         $this->load->model('country_model');
+        $this->load->model('bank_model');
         $countries[] = array();
         
         foreach ($this->country_model->get_list() as $row)
@@ -74,9 +88,12 @@ class Users extends GF_Global_controller {
         $this->load->view('users/settings', $this->data);
         $this->load->view('global/footer');
     }
-    
-    public function editProfile() {
-        if ($this->is_ajax())
+
+    /**
+     * (Async) Edits a user's information
+     */
+    public function edit_profile() {
+        if ($this->input->is_ajax_request())
         {
             $this->load->library('form_validation');
             
@@ -158,7 +175,10 @@ class Users extends GF_Global_controller {
             echo $result;
         }
     }
-    
+
+    /**
+     * User's friends view
+     */
     public function friends() {
         $this->requires_login();
         
@@ -176,6 +196,7 @@ class Users extends GF_Global_controller {
         $requests = $this->friend_model->get_pending($this->session->user_id);
         $html_requests = array();
 
+        // Pending requests
         foreach($requests as $r) {
             $r['img_src'] = $this->format_img_src($r['img_src']);
             $r['profile_url'] = site_url('users/u/'.$r['user_id']);
@@ -190,29 +211,13 @@ class Users extends GF_Global_controller {
         $this->load->view('users/friends');
         $this->load->view('global/footer');
     }
-    
-    public function pending() {
-        $this->requires_login();
-        
-        $this->load->library('parser');
-        $requests = $this->friend_model->get_pending($this->session->user_id);
-        $html_requests = array();
 
-        foreach($requests as $r) {
-            $r['img_src'] = $this->format_img_src($r['img_src']);
-            $r['profile_url'] = site_url('users/u/'.$r['user_id']);
-            array_push($html_requests, $this->parser->parse('users/fragments/users_friend_request', $r, true));
-        }
-        
-        $this->data['requests'] = $html_requests;
-        $this->data['view_title'] = 'Solicitudes de amistad pendiente';
-        $this->load->view('global/header', $this->data);
-        $this->load->view('users/pending');
-        $this->load->view('global/footer');
-    }
-    
-    public function sendFriendsRequest($target_id) {
-        if ($this->is_ajax() && $this->session->loggedIn)
+    /**
+     * (Async) Sends a friend request to a user
+     * @param   int     $target_id  User to be befriended
+     */
+    public function send_friend_request($target_id) {
+        if ($this->input->is_ajax_request() && $this->session->loggedIn)
         {
             if (isset($target_id) && $target_id > 0)
             {
@@ -228,9 +233,12 @@ class Users extends GF_Global_controller {
             }
         }
     }
-    
-    public function processRequest() {
-        if ($this->is_ajax())
+
+    /**
+     * (Async) Accepts or rejects a friend request
+     */
+    public function process_request() {
+        if ($this->input->is_ajax_request())
         {
             $action = $this->input->post('action');
             $request_id = $this->input->post('rq');
@@ -258,9 +266,12 @@ class Users extends GF_Global_controller {
             }
         }
     }
-    
-    public function removeFriend() {
-        if ($this->is_ajax() && $this->session->loggedIn)
+
+    /**
+     * Removes the relationship between two friends
+     */
+    public function remove_friend() {
+        if ($this->input->is_ajax_request() && $this->session->loggedIn)
         {
             $request_id = $this->input->post('ref');
             

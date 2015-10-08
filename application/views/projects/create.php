@@ -17,7 +17,7 @@
                         'class' => 'fs-form fs-form-full',
                         'autocomplete' => 'off'
                     );
-                    echo form_open('projects/processCreate', $config);
+                    echo form_open('projects/do-create', $config);
                     ?>
                     <ol class="fs-fields">
                         <li class="overview-hide">

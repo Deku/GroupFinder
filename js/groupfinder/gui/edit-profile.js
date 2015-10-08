@@ -18,7 +18,7 @@ $(document).ready(function (event) {
         $.ajax({
             type: "POST",
             dataType: "json",
-            url: SITE_URL + '/users/editProfile',
+            url: SITE_URL + '/users/edit-profile',
             data: $.param(data),
             beforeSend: function(){
                 display_notification(sel, 'update', 'Actualizando perfil...');
@@ -102,7 +102,7 @@ $(document).ready(function (event) {
         var sel = '#gravatar-status';
         
         $.ajax({
-            url: SITE_URL + "/pictures/useGravatar",
+            url: SITE_URL + "/pictures/use-gravatar",
             type: "POST",
             beforeSend: function(){
                 display_notification(sel, 'update', 'Actualizando perfil...');
@@ -134,7 +134,7 @@ $(document).ready(function (event) {
         $.ajax({
             type: "POST",
             dataType: "json",
-            url: SITE_URL + '/accounts/changePassword',
+            url: SITE_URL + '/accounts/change-password',
             data: $.param(data),
             beforeSend: function(){
                 display_notification(sel, 'update', 'Cambiando contraseña...');

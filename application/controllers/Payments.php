@@ -1,4 +1,13 @@
 <?php
+defined('BASEPATH') OR exit('No direct script access allowed');
+
+/**
+ * Payments Controller
+ * 
+ * Handles donations for projects
+ *
+ * @author Jose Gonzalez
+ */
 
 class Payments extends GF_Global_controller {
     public function __construct() {
@@ -6,6 +15,9 @@ class Payments extends GF_Global_controller {
         $this->load->model('payments_model');
     }
     
+    /**
+     * Registers the donation an redirects to the payment page of the selected provider
+     */
     public function checkout() {
         $this->requires_login();
         $this->load->model('project_model');

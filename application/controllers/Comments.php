@@ -1,13 +1,26 @@
 <?php
+defined('BASEPATH') OR exit('No direct script access allowed');
 
+/**
+ * Comments Controller
+ * 
+ * Handles the comments posted in a profile. The profiles can be of two types:
+ * (a) User profile
+ * (b) Project profile
+ *
+ * @author Jose Gonzalez
+ */
 class Comments extends GF_Global_controller {
     
     public function __construct() {
         parent::__construct();
     }
     
-    public function get() {
-        if ($this->is_ajax())
+    /**
+     * (Async) Gets the list of comments on a profile
+     */
+    public function load_comments() {
+        if ($this->input->is_ajax_request())
         {
             $id = $this->input->post('id');
             $type = $this->input->post('type');
@@ -24,12 +37,19 @@ class Comments extends GF_Global_controller {
                 array_push($response, $html);
             }
             
-            echo !empty($response) ? json_encode($response) : json_encode(array('result' => 'false'));
+            if (!empty($response)) {
+                $this->return_ajax_success('OK', $response);
+            } else {
+                $this->return_ajax_error();
+            }
         }
     }
     
+    /**
+     * (Async) Adds a new comment to a profile
+     */
     public function post() {
-        if ($this->is_ajax())
+        if ($this->input->is_ajax_request())
         {
             $this->load->library('form_validation');
             

@@ -259,8 +259,8 @@
                                         <div role="tabpanel" class="tab-pane" id="vacants-tab-edit">
                                             <div class="padding-bottom">
                                                 <?php
-                                                if (!empty($vacants_table)) {
-                                                    echo $vacants_table;
+                                                if (!empty($roles_table)) {
+                                                    echo $roles_table;
                                                 }
                                                 ?>
                                             </div>
@@ -268,27 +268,33 @@
                                                 <a class="btn-display-add-box pull-right" href="#" data-target="#form-add-role"><i class="fa fa-plus-circle"></i> Agregar</a>
                                             </div>
                                             <br>
-                                            <form action="" method="post" id="form-add-role" class="form-horizontal well fadeInDown animated no-display">
+                                            <?php
+                                                $form_config = array(
+                                                    'id' => 'form-add-role',
+                                                    'class' => 'form-horizontal well fadeInDown animated no-display'
+                                                );
+                                                echo form_open('projects/async', $form_config);
+                                            ?>
                                                 <h3>Agregar rol</h3>
                                                 <div id="add-vacant-notification"></div>
                                                 <div class="form-group">
                                                     <label class="col-md-2 control-label">Rol:</label>
                                                     <div class="col-md-6">
-                                                        <input type="text" class="form-control" id="add-vacant-role" placeholder="Nombre del rol. Ej: Dise&ntilde;ador, Programador, etc."/>
+                                                        <input type="text" class="form-control" name="add-vacant-role" placeholder="Nombre del rol. Ej: Dise&ntilde;ador, Programador, etc." required/>
                                                     </div>
 
                                                     <label class="col-md-1 control-label">Cupos:</label>
                                                     <div class="col-md-3">
-                                                        <input type="number" class="form-control" id="add-vacant-amount" placeholder="1"/>
+                                                        <input type="number" class="form-control" name="add-vacant-amount" placeholder="1" min="1" required/>
                                                     </div>
                                                 </div>
                                                 <div class="form-group">
                                                     <label class="col-md-2 control-label">Descripci&oacute;n del rol:</label>
                                                     <div class="col-md-10">
-                                                        <textarea class="form-control" id="add-vacant-description" placeholder="&iquest;A qu&eacute; se dedicar&aacute; esta persona dentro del proyecto?"></textarea>
+                                                        <textarea class="form-control" name="add-vacant-description" placeholder="&iquest;Qu&eacute; actividades ejecutar&aacute; esta persona dentro del proyecto?" required></textarea>
                                                     </div>
                                                 </div>
-                                                <button type="button" class="pull-right btn btn-primary" id="button-add-vacant">Guardar</button>
+                                                <button type="submit" class="pull-right btn btn-primary">Guardar</button>
                                             </form>
                                         </div>
                                     </div>

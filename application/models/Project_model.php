@@ -24,7 +24,7 @@ class Project_model extends CI_Model {
     }
 
     /**
-     * Gets the list of projects owned by an user
+     * Gets the list of projects owned by a user
      * @param   int     $user_id
      * @return  array
      */

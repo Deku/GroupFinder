@@ -1,9 +1,10 @@
 <?php
+defined('BASEPATH') OR exit('No direct script access allowed');
 
 /**
- * Clase Controlador Auth
+ * Auth Controller
  * 
- * Maneja las operaciones de las cuentas de usuario
+ * Handles the access to the system
  *
  * @author Jose Gonzalez
  */
@@ -14,11 +15,11 @@ class Auth extends GF_Global_controller {
         $this->load->model('user_model');
     }
     
-    /*
-     * Vista Registrar cuenta
+    /**
+     * Register page
      */
     public function register() {
-        $this->load->country_model;
+        $this->load->model('country_model');
         $countries[] = array();
 
         foreach ($this->country_model->get_list() as $row)
@@ -27,25 +28,14 @@ class Auth extends GF_Global_controller {
         }
 
         $this->data['countries'] = $countries;
-        
-        $this->data['view_title'] = 'Registrarse';
-        $this->load->view('global/header', $this->data);
-        $this->load->view('accounts/register');
-        $this->load->view('global/footer');
+
+        $this->load_view('Registrarse', 'accounts/register');
     }
     
-    /*
-     * Vista Iniciar sesión
+    /**
+     * Processes posted data to create a new user
      */
-    public function login() {
-        
-        $this->data['view_title'] = 'Iniciar sesión';
-        $this->load->view('global/header', $this->data);
-        $this->load->view('accounts/login');
-        $this->load->view('global/footer');
-    }
-    
-    public function processRegister() {
+    public function do_register() {
         $this->load->library('form_validation');
 
         $rules = array(
@@ -85,9 +75,7 @@ class Auth extends GF_Global_controller {
 
         if ($this->form_validation->run() == FALSE)
         {
-            $this->load->view('global/header', $this->data);
-            $this->load->view('accounts/register', $this->data);
-            $this->load->view('global/footer');
+            $this->load_view('Registrarse', 'accounts/register');
         }
 
         $this->load->model('country_model');
@@ -100,7 +88,7 @@ class Auth extends GF_Global_controller {
         $name = $this->input->post('name');
         $title = $this->input->post('title');
         $title = isset($title) ? $title : '';
-        $reference = $this->normalizeChars(trim(strtolower($name + rand(1,99))));
+        $reference = $this->normalize_chars(trim(strtolower($name + rand(1,99))));
         $countryID = intval($this->input->post('country'));
         $countryName = $this->country_model->get_name($countryID);
 
@@ -114,7 +102,7 @@ class Auth extends GF_Global_controller {
             'title' => $title,
             'country' => $countryID,
             'reference' => $reference,
-            'keywords' => $this->normalizeChars(strtolower($name . ' ' . $title . ' ' . $countryName))
+            'keywords' => $this->normalize_chars(strtolower($name . ' ' . $title . ' ' . $countryName))
         );
         
         if ($this->user_model->create($account))
@@ -160,13 +148,24 @@ class Auth extends GF_Global_controller {
 
     }
     
-    public function registerSuccess() {
-        $this->load->view('global/header', $this->data);
-        $this->load->view('accounts/registerSuccess');
-        $this->load->view('global/footer');
+    /**
+     * Succesful registration page
+     */
+    public function register_success() {
+        $this->load_view('Bienvenido!', 'accounts/registerSuccess');
     }
     
-    public function processLogin() {
+    /**
+     * Log In page
+     */
+    public function login() {
+        $this->load_view('Iniciar sesión', 'accounts/login');
+    }
+    
+    /**
+     * Processes the login attempt
+     */
+    public function do_login() {
         $this->load->library('form_validation');
         
         $rules = array (
@@ -194,7 +193,7 @@ class Auth extends GF_Global_controller {
         $user = $this->input->post('username');
         $pass = $this->input->post('password');
         
-        if ($this->user_model->exists($user) && ($this->auth($user, $pass) == TRUE))
+        if ($this->user_model->exists($user) && $this->user_model->authenticate($user, $pass))
         {
             $user_id = $this->user_model->get_id($user);
             
@@ -232,7 +231,7 @@ class Auth extends GF_Global_controller {
                             );
                     
                     set_cookie(
-                            'gf_keeplogged',
+                            'keeplogged',
                             $keepLogged_id.'___'.$keepLogged_token,
                             strtotime('+1 Week')
                     );
@@ -248,6 +247,9 @@ class Auth extends GF_Global_controller {
         }
     }
     
+    /**
+     * Account activation page
+     */
     public function activate() {
         $user_id = $this->user_model->get_id($this->session->username);
         $_SESSION['user_email'] = $this->user_model->get_email($user_id);
@@ -277,12 +279,13 @@ class Auth extends GF_Global_controller {
             $_SESSION['pending'] = true;
         }
         
-        $this->load->view('global/header', $this->data);
-        $this->load->view('accounts/activate');
-        $this->load->view('global/footer');
+        $this->load_view('Activar cuenta', 'accounts/activate');
     }
     
-    public function processActivation() {
+    /**
+     * Activates an account for use
+     */
+    public function do_activate() {
         $this->load->library('form_validation');
         
         $rules = array (
@@ -297,9 +300,7 @@ class Auth extends GF_Global_controller {
         
         if ($this->form_validation->run() == FALSE)
         {   
-            $this->load->view('global/header', $this->data);
-            $this->load->view('accounts/activate');
-            $this->load->view('global/footer');
+            $this->load_view('Activar cuenta', 'accounts/activate');
         }
         
         $user_id = $this->session->user_id;
@@ -310,21 +311,22 @@ class Auth extends GF_Global_controller {
         {
             if ($this->user_model->activate($user_id))
             {
-                $this->registerSuccess();
+                $this->register_success();
             } else {
                 $this->data['errorMsg'] = 'El código es válido pero ocurrió un problema al intentar activar tu cuenta :(';
-                $this->load->view('global/header', $this->data);
-                $this->load->view('accounts/activate');
-                $this->load->view('global/footer');
+                
+                $this->load_view('Activar cuenta', 'accounts/activate');
             }
         } else {
             $this->data['errorMsg'] = 'El código ingresado no es válido.';
-            $this->load->view('global/header', $this->data);
-            $this->load->view('accounts/activate');
-            $this->load->view('global/footer');
+            
+            $this->load_view('Activar cuenta', 'accounts/activate');
         }
     }
     
+    /**
+     * Resends the email with the activation code
+     */
     public function resend() {
         $user_email = $this->session->user_email;
         $user_id = $this->session->user_id;
@@ -338,21 +340,24 @@ class Auth extends GF_Global_controller {
         redirect('auth/activate');
     }
     
+    /**
+     * Terminates the current session
+     */
     public function logout() {
+        $this->load->helper('cookie');
+        
+        delete_cookie('keeplogged');
         $this->user_model->remove_persistent_session($this->session->user_id);
         session_destroy();
+        
         redirect('portal/home');
     }
     
-    private function auth($user, $pass) {
-        $salt = $this->user_model->get_salt($user);
-        $hashed_pass = sha1(sha1($pass) . sha1($salt));
-        
-        return $this->user_model->check_password($user, $hashed_pass);
-    }
-    
-    public function changePassword() {
-        if ($this->is_ajax())
+    /**
+     * (Async) Changes the password of an account
+     */
+    public function change_password() {
+        if ($this->input->is_ajax_request())
         {
             $this->load->library('form_validation');
             

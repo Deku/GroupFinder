@@ -31,7 +31,7 @@ class Conversation_message_model extends CI_Model {
     }
 
     /**
-     * Counts the number of an user's unread messages
+     * Counts the number of a user's unread messages
      * @param   int     $user_id
      * @return  int
      */

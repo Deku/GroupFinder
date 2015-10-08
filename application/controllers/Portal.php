@@ -1,8 +1,16 @@
 <?php
 defined('BASEPATH') OR exit('No direct script access allowed');
 
+/**
+ * Home Controller
+ *
+ * Handles the home page and user's dashboard
+ */
 class Portal extends GF_Global_controller {
-    
+
+    /**
+     * Home landing page
+     */
     public function home()
     {
         $this->load->model('project_model');
@@ -21,11 +29,8 @@ class Portal extends GF_Global_controller {
             $feat->limit_date = date('d/M/Y', strtotime($feat->limit_date));
         }
         $this->data['featured'] = $featured;
-        
-        $this->data['view_title'] = 'Inicio';
-        $this->load->view('global/header', $this->data);
-        $this->load->view('portal/home');
-        $this->load->view('global/footer');
+
+        $this->load_view('Inicio', 'portal/home');
     }
     
 }

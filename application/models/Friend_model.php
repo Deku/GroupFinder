@@ -55,7 +55,7 @@ class Friend_model extends CI_Model {
     }
     
     /**
-     * Gets the list of friends of an user
+     * Gets the list of friends of a user
      * @param   int     $user_id
      * @return  array
      */

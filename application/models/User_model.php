@@ -111,7 +111,7 @@ class User_model extends CI_Model {
     }
 
     /**
-     * Changes the state of an user from locked to unlocked
+     * Changes the state of a user from locked to unlocked
      * @param   type    $user_id
      * @return  boolean
      */
@@ -134,7 +134,7 @@ class User_model extends CI_Model {
     }
 
     /**
-     * Updates the last time an user authenticated
+     * Updates the last time a user authenticated
      * @param   int     $user_id
      * @param   string  $ip
      */
@@ -208,7 +208,7 @@ class User_model extends CI_Model {
     }
 
     /**
-     * Gets the id for an username
+     * Gets the id for a username
      * @param   string  $user   Username
      * @return  integer
      */
@@ -345,5 +345,18 @@ class User_model extends CI_Model {
         }
 
         return NULL;
+    }
+    
+    /**
+     * Tries to authenticate the user with the given credentials
+     * @param   string  $user
+     * @param   string  $pass
+     * @return  boolean
+     */
+    public function authenticate($user, $pass) {
+        $salt = $this->get_salt($user);
+        $hashed_pass = sha1(sha1($pass) . sha1($salt));
+        
+        return (boolean) $this->check_password($user, $hashed_pass);
     }
 }
