@@ -17,7 +17,7 @@ defined('BASEPATH') OR exit('No direct script access allowed');
 | environments.
 |
 */
-$config['base_url'] = 'http://localhost/GroupFinder/';
+$config['base_url'] = 'http://groupfinder.local/';
 
 /*
 |--------------------------------------------------------------------------
@@ -131,7 +131,7 @@ $config['subclass_prefix'] = 'GF_';
 | Note: This will NOT disable or override the CodeIgniter-specific
 |	autoloading (application/config/autoload.php)
 */
-$config['composer_autoload'] = TRUE;
+$config['composer_autoload'] = FALSE;
 
 /*
 |--------------------------------------------------------------------------
@@ -502,10 +502,9 @@ $config['proxy_ips'] = '';
 /*
  * Custom autoload for core subclasses
  * 
- * Thanks to Daan. http://blog.daanraman.com/coding/extending-a-controller-using-my_controller-in-codeigniter-2-0-and-above/
+ * Credits to Seldaek. http://stackoverflow.com/questions/15801705/composer-breaks-exisiting-autoload-in-codeigniter
  */
-
-function __autoload($class)
+function gf_autoload($class)
 {
     if (substr($class,0,3) !== 'CI_')
     {
@@ -516,4 +515,10 @@ function __autoload($class)
     }
 }
 
+spl_autoload_register('gf_autoload');
+
+
+/**
+ * Set the locale to spanish
+ */
 setlocale(LC_ALL,"spanish");
