@@ -25,7 +25,8 @@ class Comment_model extends CI_Model {
                 ->from('comments')
                 ->join('users', 'comments.user_id = users.user_id')
                 ->join('users_profile_pictures', 'comments.user_id = users_profile_pictures.user_id')
-                ->where(array('ref_id' => $ref, 'origin' => $origin, 'size' => 85));
+                ->where(array('ref_id' => $ref, 'origin' => $origin, 'size' => 85))
+                ->order_by('post_time');
         $query = $this->db->get();
 
         return $query->num_rows() > 0 ? $query->result() : array();

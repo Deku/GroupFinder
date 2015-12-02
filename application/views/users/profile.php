@@ -31,48 +31,7 @@
                     </div>
                 </div>
             </div>
-            <div id="feedback" class="row">
-                <h2 id="comments-title"></h2>
-                <hr>
-                <div id="comments"></div>
-                <script type="text/javascript">
-                    $(document).ready(function() {
-                        load_comments(<?php echo '0, ' . $this->uri->segment(3) . ', ' . ($this->session->loggedIn ? 'true' : 'false'); ?>);
-                    });
-                </script>
-                
-                <?php if ($this->session->loggedIn) { ?>
-                    <div class="message_heading">
-                        <h4>Comentar</h4>
-                    </div> 
-
-                    <?php 
-                    $attr = array(
-                        'id' => 'comment-form',
-                        'class' => 'contact-form',
-                        'data-t' => 0,
-                        'data-i' => $this->uri->segment(3),
-                        'data-l' => ($this->session->loggedIn ? 'true' : 'false')
-                    );
-                    echo form_open('comments/post', $attr); ?>
-                        <div class="row">
-                            <div class="col-sm-2">
-                                <img class="img-circle img-responsive" style="width:auto;height:130px;" src="<?php echo $this->session->img_large; ?>" />
-                            </div>
-                            <div class="col-sm-10">                        
-                                <div class="form-group">
-                                    <input type="hidden" name="ref" id="ref" value="<?php echo $this->uri->segment(3); ?>" />
-                                    <input type="hidden" name="origin" id="origin" value="0" />
-                                    <textarea id="message" required class="form-control" rows="6"></textarea>
-                                </div>                        
-                                <div class="form-group">
-                                    <button id="comment-submit" type="submit" class="btn btn-primary btn-lg pull-right" required="required">Enviar</button>
-                                </div>
-                            </div>
-                        </div>
-                    </form>
-                <?php } ?>
-            </div>
+            <div id="feedback" class="row"></div>
             
         <?php } else { ?>
             <div class="row">
@@ -84,5 +43,5 @@
         <?php } ?>
     </div>
 </section>
-<script type="text/javascript" src="<?php echo base_url(); ?>js/groupfinder/app/comments.js"></script>
+<script type="text/babel" src="<?= base_url(); ?>js/groupfinder/ui/comments.js"></script>
 <script type="text/javascript" src="<?php echo base_url(); ?>js/groupfinder/gui/profile-view.js"></script>

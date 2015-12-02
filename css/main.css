@@ -3578,6 +3578,10 @@ thead {
     padding: 0 !important;
 }
 
+.no-margin{
+    margin: 0px; !important;
+}
+
 .no-button {
     background: none;
     border: none;
@@ -3640,4 +3644,33 @@ thead {
     font-family: 'Open Sans', sans-serif;
     font-weight: 400;
     padding: 10px 25px;
+}
+
+.flex-col {
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    align-content: center;
+    justify-content: flex-start;
+    padding: 0 20px;
+}
+
+.flex-grow-2 {
+    flex-grow: 2;
+}
+
+.profile-navigation {
+    padding: 0;
+    margin-top: 10px;
+    width: 100%;
+}
+
+.profile-navigation > li {
+    padding-left: 50px;
+    width: 100%;
+    text-align: left;
+    margin: 5px 0;
+}
+.profile-navigation > li > a {
+    color: #444 !important;
 }

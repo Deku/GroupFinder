@@ -19,29 +19,13 @@ class Comments extends GF_Global_controller {
     /**
      * (Async) Gets the list of comments on a profile
      */
-    public function load_comments() {
+    public function comments() {
         if ($this->input->is_ajax_request())
         {
-            $id = $this->input->post('id');
-            $type = $this->input->post('type');
+            $id = $this->session->prof_id;
+            $type = $this->session->prof_type;
             
-            $this->load->model('comment_model');
-            $this->load->library('parser');
-            
-            $comments = $this->comment_model->get_list($id, $type);
-            $response = array();
-            foreach ($comments as $comment)
-            {
-                $comment->img_src = $this->format_img_src($comment->img_src);
-                $html = $this->parser->parse('global/comment', $comment, true);
-                array_push($response, $html);
-            }
-            
-            if (!empty($response)) {
-                $this->return_ajax_success('OK', $response);
-            } else {
-                $this->return_ajax_error();
-            }
+            $this->get_list($id, $type);
         }
     }
     
@@ -51,54 +35,34 @@ class Comments extends GF_Global_controller {
     public function post() {
         if ($this->input->is_ajax_request())
         {
-            $this->load->library('form_validation');
-            
-            $rules = array(
-                array(
-                    'field' => 'ref',
-                    'label' => 'Referencia',
-                    'rules' => 'trim|required'
-                ),
-                array(
-                    'field' => 'origin',
-                    'label' => 'Origen',
-                    'rules' => 'trim|required'
-                ),
-                array(
-                    'field' => 'message',
-                    'label' => 'Mensaje',
-                    'rules' => 'trim|required'
-                )
-            );
-            $this->form_validation->set_rules($rules);
-            
-            if ($this->form_validation->run() == FALSE)
-            {
-                echo json_encode( array(
-                    'result' => false,
-                    'error' => 'No se pudo enviar tu comentario. '. $this->form_validation->error_string()
-                ));
-                return;
-            }
-            
             $user_id = $this->session->user_id;
-            $ref = $this->input->post('ref');
-            $origin = $this->input->post('origin');
+            $prof_id = $this->session->prof_id;
+            $type = $this->session->prof_type;
             $message = $this->input->post('message');
             
             $this->load->model('comment_model');
-            
-            $result = $this->comment_model->insert($user_id, $ref, $origin, $message);
-            
-            if ($result)
+
+            if ($this->comment_model->insert($user_id, $prof_id, $type, $message))
             {
-                $this->load->library('parser');
-                $last_comment = $this->comment_model->get_last($ref, $origin);
-                $last_comment[0]['img_src'] = $this->format_img_src($last_comment[0]['img_src']);
-                $html = $html = $this->parser->parse('global/comment', $last_comment[0], true);
-                echo json_encode($html);
+                $this->get_list($prof_id, $type);
             }
             
         }
+    }
+
+    private function get_list($id, $type) {
+        $this->load->model('comment_model');
+        $this->load->library('parser');
+
+        $comments = $this->comment_model->get_list($id, $type);
+
+        foreach ($comments as $comment)
+        {
+            $comment->img_src = $this->format_img_src($comment->img_src);
+        }
+
+        header('Content-Type: application/json');
+        header('Cache-Control: no-cache');
+        echo json_encode($comments, JSON_PRETTY_PRINT);
     }
 }
